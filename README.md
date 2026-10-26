@@ -1,0 +1,2 @@
+# SmartPot-Cache-Valkey
+
