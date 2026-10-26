@@ -1,0 +1,19 @@
+name: smartpot-cache-valkey
+
+services:
+  cache-smartpot:
+    build: .
+    image: ghcr.io/smartpottech/smartpot-cache-valkey:latest
+    container_name: smartpot-cache
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:6379:6379"
+    tmpfs:
+      - /tmp
