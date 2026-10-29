@@ -20,6 +20,9 @@ cat > "$CONFIG" <<EOF
 bind 0.0.0.0
 port 6379
 protected-mode yes
+tcp-backlog 511
+timeout 300
+tcp-keepalive 60
 databases ${DATABASES}
 maxmemory ${MAXMEMORY}
 maxmemory-policy allkeys-lru
