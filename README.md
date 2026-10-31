@@ -112,6 +112,20 @@ plataforma completa en una sola imagen ampliable:
 - [Linaje de los datos](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_04_Data_Lineage.svg):
   en qué momento de cada flujo se consulta o se escribe una llave
 
+## Hoja de Ruta Industrial: Multi-IO, Transporte UDS y Funciones Lua Atómicas
+
+Como parte del **Plan Maestro de Maximización del Stack B (demo-beta)**, `SmartPot-Cache-Valkey` incorpora afinaciones de rendimiento extremo:
+
+1. **Listener Dual (UDS y TCP)**:
+   - Configuración de socket UNIX `/var/run/smartpot/valkey.sock` con permisos 770 para comunicación sin sobrecarga TCP en despliegues mononodo (`demo-beta`), preservando el puerto TCP 6379 para escalado en red.
+2. **Concurrencia Multi-Hilo y Memoria**:
+   - `io-threads 4` e `io-threads-do-reads yes` para paralelizar la lectura y escritura de sockets.
+   - Activación de purga asíncrona de Jemalloc (`lazyfree-lazy-eviction yes`, `lazyfree-lazy-expire yes`, `activedefrag yes`).
+3. **Funciones Lua Atómicas (`FUNCTION LOAD`)**:
+   - Evaluación atómica de umbrales del filtro de banda muerta agronómico.
+   - Deduplicación de paquetes MQTT por `sequence_id`.
+   - Algoritmo de tasa Generic Cell Rate Algorithm (GCRA) evaluado en una única transacción.
+
 ## Licencia
 
 Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles. La imagen base
