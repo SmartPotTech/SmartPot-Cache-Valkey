@@ -30,6 +30,12 @@ save ""
 appendonly no
 dir /tmp
 requirepass ${PASSWORD}
+io-threads 4
+io-threads-do-reads yes
+activedefrag yes
+lazyfree-lazy-eviction yes
+lazyfree-lazy-expire yes
+lazyfree-lazy-server-del yes
 rename-command FLUSHALL ""
 rename-command FLUSHDB ""
 rename-command CONFIG ""
@@ -37,5 +43,32 @@ rename-command DEBUG ""
 rename-command SHUTDOWN ""
 EOF
 
-echo "Valkey listo: ${MAXMEMORY} de memoria, sin persistencia y con contraseña."
+# Listener Dual Unix Domain Socket (UDS) si el directorio compartido está disponible
+SOCKET_DIR="/var/run/smartpot"
+if [ -d "$SOCKET_DIR" ] && [ -w "$SOCKET_DIR" ]; then
+  cat >> "$CONFIG" <<EOF
+unixsocket ${SOCKET_DIR}/valkey.sock
+unixsocketperm 770
+EOF
+  echo "UDS habilitado: ${SOCKET_DIR}/valkey.sock (perm 770)"
+else
+  echo "UDS no disponible o sin permisos en ${SOCKET_DIR}; operando exclusivamente en modo TCP 6379."
+fi
+
+# Carga en segundo plano de la librería de funciones Lua atómicas al arrancar el servicio
+LUA_LIB="/usr/local/share/valkey/smartpot_functions.lua"
+if [ -f "$LUA_LIB" ]; then
+  (
+    for _ in $(seq 1 40); do
+      if REDISCLI_AUTH="$PASSWORD" valkey-cli -p 6379 ping 2>/dev/null | grep -q PONG; then
+        REDISCLI_AUTH="$PASSWORD" valkey-cli -p 6379 FUNCTION LOAD REPLACE "$(cat "$LUA_LIB")" >/dev/null 2>&1 || true
+        echo "Librería de funciones atómicas Lua (smartpot) precargada con éxito."
+        break
+      fi
+      sleep 0.1
+    done
+  ) &
+fi
+
+echo "Valkey listo: ${MAXMEMORY} de memoria, multi-io 4 threads, sin persistencia y con contraseña."
 exec valkey-server "$CONFIG"
