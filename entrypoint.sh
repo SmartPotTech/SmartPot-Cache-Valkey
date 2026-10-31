@@ -43,14 +43,15 @@ rename-command DEBUG ""
 rename-command SHUTDOWN ""
 EOF
 
-# Listener Dual Unix Domain Socket (UDS) si el directorio compartido está disponible
-SOCKET_DIR="/var/run/smartpot"
+# Listener Dual Unix Domain Socket (UDS) si el directorio compartido o la variable VALKEY_SOCKET están disponibles
+VALKEY_SOCKET_PATH="${VALKEY_SOCKET:-/var/run/smartpot/valkey.sock}"
+SOCKET_DIR="$(dirname "$VALKEY_SOCKET_PATH")"
 if [ -d "$SOCKET_DIR" ] && [ -w "$SOCKET_DIR" ]; then
   cat >> "$CONFIG" <<EOF
-unixsocket ${SOCKET_DIR}/valkey.sock
+unixsocket ${VALKEY_SOCKET_PATH}
 unixsocketperm 770
 EOF
-  echo "UDS habilitado: ${SOCKET_DIR}/valkey.sock (perm 770)"
+  echo "UDS habilitado: ${VALKEY_SOCKET_PATH} (perm 770)"
 else
   echo "UDS no disponible o sin permisos en ${SOCKET_DIR}; operando exclusivamente en modo TCP 6379."
 fi
